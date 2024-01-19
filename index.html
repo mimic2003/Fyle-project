@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Github Repos</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+<div style="display: flex;flex-direction: row;gap: 50px;">
+    <div>
+        <img src="https://www.google.com/url?sa=i&url=https%3A%2F%2Fbuffer.com%2Flibrary%2Ffree-images%2F&psig=AOvVaw2zFtBgV9Dscoj2HEs_WbAM&ust=1705698160006000&source=images&cd=vfe&ved=0CBMQjRxqFwoTCMienPzq54MDFQAAAAAdAAAAABAE" style="border-radius: 50%;height: 200px;width: 200px;border:3px solid black"/>
+    </div>
+    <div>
+        <h1 id="userId">Loading...</h1>
+        <h3 id="userLogin">Loading...</h3>
+        <i class="material-icons">add_location   </i><b>India</b><br><br>
+        <i>github:- mimic2003</i>
+        
+    </div>
+  
+</div>
+<br>
+<div>
+    <b>github:- mimic2003</b>
+
+</div>
+<br>
+<div>
+    <label for="reposPerPage">Repositories per page (max 100): </label>
+    <input type="number" id="reposPerPage" min="1" max="100" value="10">
+    <button onclick="updateItemsPerPage()">Update</button>
+</div>
+
+<div id="repoContainer" style="display: flex; flex-wrap: wrap; justify-content: space-between;"></div>
+<div id="pagination" style="margin-top: 20px;"></div>
+
+<script>
+    var itemsPerPage = 10; // Default number of repositories per page
+    var currentPage = 1;
+
+    function loadUserInfo() {
+        var userInfoRequest = new XMLHttpRequest();
+        userInfoRequest.open("GET", "https://api.github.com/users/rhysd", true);
+        userInfoRequest.onload = function () {
+            var userData = JSON.parse(this.response);
+            var userIdElement = document.getElementById("userId");
+            var userLoginElement = document.getElementById("userLogin");
+
+            userIdElement.innerText = userData.login;
+            userLoginElement.innerText = userData.node_id;
+        };
+        userInfoRequest.send();
+    }
+
+    function loadRepositories(page) {
+        var request = new XMLHttpRequest();
+        var startIndex = (page - 1) * itemsPerPage;
+        var endIndex = startIndex + itemsPerPage;
+        var repoContainer = document.getElementById("repoContainer");
+
+        request.open("GET", "https://api.github.com/users/rhysd/repos", true);
+        request.onload = function () {
+            var data = JSON.parse(this.response);
+            repoContainer.innerHTML = ""; // Clear previous content
+
+            for (var i = startIndex; i < endIndex && i < data.length; i++) {
+                var status = data[i];
+                var statusHTML = '<div style="border: 1px solid black; height: 300px; width: 48%; margin-bottom: 10px;">';
+                statusHTML += "<div style='color: lightblue; font-size: xx-large;'>" + status.name + "</div>";
+                statusHTML += "<br>";
+                statusHTML += "<div><b>" + status.description + "</b></div>";
+                statusHTML += "<br>";
+                statusHTML += "<div style='color: black; background-color: lightblue; height: 20px; width:70px;text-align:center;border-radius:5px;align-items:center;'>" + status.language + "</div>";
+                statusHTML += "</div>";
+
+                repoContainer.innerHTML += statusHTML;
+            }
+        };
+        request.send();
+    }
+
+    function updateItemsPerPage() {
+        var input = document.getElementById("reposPerPage");
+        itemsPerPage = Math.min(parseInt(input.value), 100); // Limit to a maximum of 100 repositories per page
+        input.value = itemsPerPage; // Update input value to reflect the actual value used
+        loadRepositories(currentPage);
+        updatePagination();
+    }
+
+    function updatePagination() {
+        var totalCountRequest = new XMLHttpRequest();
+        totalCountRequest.open("GET", "https://api.github.com/users/rhysd/repos", true);
+        totalCountRequest.onload = function () {
+            var totalCount = JSON.parse(this.response).length;
+            var totalPages = Math.ceil(totalCount / itemsPerPage);
+            var paginationContainer = document.getElementById("pagination");
+
+            paginationContainer.innerHTML = ""; // Clear previous pagination buttons
+
+            for (var i = 1; i <= totalPages; i++) {
+                var button = document.createElement("button");
+                button.innerText = i;
+                button.onclick = function () {
+                    loadRepositories(parseInt(this.innerText));
+                };
+                paginationContainer.appendChild(button);
+            }
+        };
+        totalCountRequest.send();
+    }
+
+    // Initial load on page load
+    loadUserInfo();
+    loadRepositories(currentPage);
+    updatePagination();
+</script>
+
+</body>
+</html>
